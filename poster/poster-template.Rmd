@@ -1,0 +1,126 @@
+---
+title: "Examining Racial Disparities in U.S. Incarceration and Capital Punishment"
+author: 
+  - name: Zoe Williams
+    affil: 1
+  - name:  Nathan Alexander, PhD
+    affil: 2, 3
+affiliation:
+  - num: 1
+    address: Department of Political Science, College of Arts and Sciences
+  - num: 2
+    address: Department of Curriculum and Instruction, School of Education
+  - num: 3
+    address: Program in Applied Data Science and Analytics, The Graduate School
+column_numbers: 3
+logoright_name: img/qs-logo.png
+logoleft_name: img/hu-logo.jpg
+titlebox_borderwidth: "0.25cm"
+primary_colour: "#ffffff"
+secondary_colour: "#5F6062"
+accent_colour: "#E51937"
+titlebox_bordercol: "#003A63"
+title_textcol: "#003A63"
+author_textcol: "#003A63"
+affiliation_textcol: "#003A63"
+columnline_col: "#E51937"
+columnline_style: solid
+sectitle_textcol: "#ffffff"
+sectitle_bgcol: "#003A63"
+sectitle_bordercol: "#003A63"
+sectitle2_textcol: "#003A63"
+output: 
+  - posterdown::posterdown_html
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("pak")
+#install.packages("posterdown")
+pak::pak('rstudio/pagedown')
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(here)
+here::i_am("poster-template.Rmd")
+```
+
+```{r, eval=F, include=FALSE}
+pagedown::chrome_print("poster-template.Rmd")
+```
+
+# Abstract
+
+We investigate racial disparities in U.S. incarceration rates and capital punishment to highlight systemic inequities within the criminal justice system. Our hypotheses align with research literature and historical data, indicating that Black Americans are incarcerated at disproportionately higher rates than other groups; we take a particular focus on southern states. We also examine racial bias in the administration of the death penalty, specifically analyzing data on Black defendants. By utilizing multiple sources of state-level data, we aim to uncover how race influences patterns of incarceration and sentencing, emphasizing the need for reforms to address persistent inequities and promote fairness in the justice system.
+
+# Overview
+
+This is some sample text.
+
+# Literature Review
+
+This is some sample text.
+
+# Research Questions
+
+1. This is research question 1.
+
+2. This is research question 2.
+
+# Methodology
+
+This is some sample text.
+
+## Data
+
+This is some more sample text.
+
+## Analytic framework
+
+This is some more sample text.
+
+# Findings
+
+These are the findings.
+
+Here is finding 1.
+
+Here is finding 2.
+
+```{r, include=F, warning=F, messages=F}
+sentences <- read.csv("../data/sentences.csv")
+
+yearly <- yearly_counts <- sentences %>%
+  group_by(Year) %>%
+  summarise(Count = n())
+```
+
+```{r, echo=F, warning=F, messages=F}
+ggplot(yearly_counts, aes(x = Year, y = Count)) +
+  geom_line(color = "blue") +
+  geom_point(color = "red") +
+  labs(title = "Trend of Sentences Over Time", x = "Year", y = "Count") +
+  theme_minimal()
+```
+
+Here is finding 3.
+
+Here is finding 4.
+
+# Discussion
+
+This is the discussion section [@alexander2021new].
+
+This is the further discussion.
+
+# Conclusion
+
+This is some concluding text.
+
+# Acknowledgements
+
+These are the acknowledgements. This work was supporting by funding from the Alfred P. Sloan Foundation (Grant 2023-21062).
+
+# References
