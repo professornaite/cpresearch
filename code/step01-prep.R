@@ -10,8 +10,38 @@ library(ggplot2)
 sentences <- read.csv("data/sentences.csv")
 str(sentences)
 
+# prop of black and white races
+sentences %>% 
+  group_by(Races) %>% 
+  count() %>% 
+  filter(!n < 4000) %>% 
+  mutate(prop = n/sum(n))
 
+table.of.sentences <- sentences %>% 
+  mutate(cats = as.factor(sentences$Outcome.of.Sentence)) %>% 
+  summary()
 
+sentences %>% 
+  mutate(cats = as.factor(sentences$Outcome.of.Sentence)) %>% 
+  select(Races, Outcome.of.Sentence) %>% 
+  filter(Outcome.of.Sentence == 
+           c("Resentenced to Life or Less",
+           "Executed",
+           "Resentenced to Death",
+           "Sentence Commuted"))
+
+# consolidate
+summary.by.race
+
+sentences %>% 
+  group_by(Races) %>% 
+  select(Outcome.of.Sentence) %>% 
+  count() %>% 
+  filter(!n < 4000) %>% 
+  summary_
+
+count(sentences)
+# Black folks are being put on sentence of the death but they are not being executed
 
 # Plot gender distribution
 ggplot(sentences, aes(x = Gender)) +
