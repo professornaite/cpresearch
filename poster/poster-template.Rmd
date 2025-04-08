@@ -63,11 +63,13 @@ This is some sample text.
 
 This is some sample text.
 
+I am adding a citation @bohm2016deathquest.
+
 # Research Questions
 
-1. This is research question 1.
+1.  This is research question 1.
 
-2. This is research question 2.
+2.  This is research question 2.
 
 # Methodology
 
