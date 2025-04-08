@@ -17,18 +17,22 @@ sentences %>%
   filter(!n < 4000) %>% 
   mutate(prop = n/sum(n))
 
+sentences
+
 table.of.sentences <- sentences %>% 
-  mutate(cats = as.factor(sentences$Outcome.of.Sentence)) %>% 
+  mutate(cats = as.factor(Outcome.of.Sentence)) %>% 
   summary()
 
 sentences %>% 
-  mutate(cats = as.factor(sentences$Outcome.of.Sentence)) %>% 
+  mutate(cats = as.factor(Outcome.of.Sentence)) %>% 
   select(Races, Outcome.of.Sentence) %>% 
-  filter(Outcome.of.Sentence == 
-           c("Resentenced to Life or Less",
-           "Executed",
-           "Resentenced to Death",
-           "Sentence Commuted"))
+  filter(Outcome.of.Sentence %in% c("Resentenced to Life or Less",
+                                    "Executed",
+                                    "Resentenced to Death",
+                                    "Sentence Commuted")) %>% 
+  group_by(Races) %>% 
+  summarise(count = n())
+
 
 # consolidate
 summary.by.race
