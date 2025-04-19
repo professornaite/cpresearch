@@ -1,5 +1,5 @@
 ---
-title: "Examining Racial Disparities in U.S. Incarceration and Capital Punishment"
+title: "Examining Racial Disparities in Capital Punishment"
 author: 
   - name: Zoe Williams
     affil: 1
@@ -15,7 +15,7 @@ affiliation:
 column_numbers: 3
 logoright_name: img/qs-logo.png
 logoleft_name: img/hu-logo.jpg
-titlebox_borderwidth: "0.25cm"
+titlebox_borderwidth: "0.35cm"
 primary_colour: "#ffffff"
 secondary_colour: "#5F6062"
 accent_colour: "#E51937"
@@ -48,42 +48,330 @@ here::i_am("poster-template.Rmd")
 ```
 
 ```{r, eval=F, include=FALSE}
+# do not remove; this line is to create the PDF version of your poster
+# update.packages(c("pagedown", "servr"))
+
 pagedown::chrome_print("poster-template.Rmd")
 ```
 
 # Abstract
 
-We investigate racial disparities in U.S. incarceration rates and capital punishment to highlight systemic inequities within the criminal justice system. Our hypotheses align with research literature and historical data, indicating that Black Americans are incarcerated at disproportionately higher rates than other groups; we take a particular focus on southern states. We also examine racial bias in the administration of the death penalty, specifically analyzing data on Black defendants. By utilizing multiple sources of state-level data, we aim to uncover how race influences patterns of incarceration and sentencing, emphasizing the need for reforms to address persistent inequities and promote fairness in the justice system.
+We explore disparities in U.S. capital punishment. Our hypotheses align with studies indicating that Black Americans are incarcerated at higher rates than other groups. We examine measures of difference in administrative data on life in prison and the death penalty.
 
 # Overview
 
-This is some sample text.
+@bohm2016deathquest outlines theories and practices related to capital punishment in the United States. Other scholars, such as @alexander2021new, analyze prisons and the historical. Fewer studies look at capital punishment. As more researchers consider capital punishment, base studies need to be conducted.
 
-# Literature Review
+Collapsed categories in capital punishment data guided the analysis:
 
-This is some sample text.
+- **Executed**: The legal process by which a person sentenced to death is put to death as a form of punishment.
 
-I am adding a citation @bohm2016deathquest.
+- **Exonerated**: A legal declaration that a person previously convicted of a crime is officially cleared of all charges.
+
+- **Resentenced to Life or Less**: A judicial action where a defendant's original sentence—often a death sentence or a lengthy prison term—is reduced to a lesser sentence, such as life imprisonment without the possibility of parole or life with the possibility of parole.
+
+- **Sentence Commuted**: The reduction or alteration of a defendant's original sentence by a executive authority (such as a governor or president), which shortens the length of imprisonment or changes the nature of the punishment. 
+
+- **Died (Other)**: Death by means other than execution, such as dying on death row.
 
 # Research Questions
 
-1.  This is research question 1.
+1.  What are the sentencing outcome distributions: Executed, Exonerated, Resentenced, Sentence Commuted, and Died?
 
-2.  This is research question 2.
+2.  Are defendants proportionally represented across sentencing outcomes, or do disparities exist indicating that either racial group (Black-White) is overrepresented or underrepresented?
 
 # Methodology
 
-This is some sample text.
-
 ## Data
 
-This is some more sample text.
+- Capital Punishment Data (historical)
 
-## Analytic framework
+- U.S. Census Data (2023 ACS 5-year Estimates)
 
-This is some more sample text.
+We cleaned and integrated data values across both databases.
+
+## Disparity ratio
+
+$$
+\frac{\text{Capital Sentencing Proportion}}{\text{Population Proportion}} = \frac{\dfrac{n}{\sum n}}{\dfrac{\text{estimate}}{\sum \text{estimate}}}
+$$
 
 # Findings
+
+```{r, include=F, warning=F, messages=F}
+sentences <- read.csv("../data/sentences.csv")
+str(sentences)
+```
+
+```{r, include=F, warning=F, messages=F}
+sentences2 <- sentences %>%
+  mutate(Outcome_Category = case_when(
+      Outcome.of.Sentence %in% c("Executed",
+                                 "Executed for a Different Crime", 
+                                 "Executed by a Different State", 
+                                 "Executed for a Different Crime Pending Retrial or Resentencing"
+                                 ) ~ "Executed",
+      
+      Outcome.of.Sentence %in% c("Resentenced to Death", 
+                                 "Resentenced to Life or Less", 
+                                 "Resentenced to Time Served"
+                                 ) ~ "Resentenced to Life or Less",
+      
+      Outcome.of.Sentence %in% c("Exonerated",
+                                 "Grant of Relief (Retrial/Resentencing Pending)", 
+                                 "Grant of Relief (Never Retried)", 
+                                 "Grant of Relief (Subject to Appeal)",
+                                 "Conviction Voided", 
+                                 "Conviction Voided, Convicted and Sentenced to Life or Less in Another Jurisdiction",
+                                 "Not Guilty by Reason of Insanity", 
+                                 "Acquitted, Convicted and Sentenced to Death in Another Jurisdiction"
+                                 ) ~ "Exonerated",
+      
+      Outcome.of.Sentence %in% c("Died on Death Row",
+                                 "Died Pending Retrial or Resentencing") ~ "Died (Other)", 
+      
+      Outcome.of.Sentence %in% c("Active Death Sentence")  ~ "Active Death Sentence",
+      
+      Outcome.of.Sentence %in% c("Sentence Commuted (Administrative)", 
+                                 "Sentence Commuted", 
+                                 "Sentence was Commuted to life without parole", 
+                                 "Sentence was Commuted to time served"
+                                 ) ~ "Sentence Commuted",
+      
+      TRUE ~ NA_character_  # For outcomes that don't fit or need review
+    )
+  ) %>% 
+  relocate(defendant, 
+           sentence, 
+           Year, 
+           Gender, 
+           Races, 
+           Outcome.of.Sentence, 
+           Outcome_Category, 
+           Current.Case.Status, 
+           Region,
+           State.Abbreviation) %>% 
+  mutate(Multi.sentence.identifier = as.numeric(Multi.sentence.identifier))
+
+# drop all races except for white and black
+sentences3 <- sentences2 %>%
+  as.tibble() %>% 
+  filter(Races %in% c("White", "Black")) %>% 
+  rename(outcome_original = Outcome.of.Sentence) %>% 
+  rename(outcome_category = Outcome_Category) %>% 
+  rename(race = Races) %>% 
+  rename(year = Year) %>% 
+  rename(gender = Gender) %>% 
+  rename(state = State.Abbreviation) %>% 
+  rename(region = Region) %>% 
+  rename(name = Name) %>% 
+  mutate(multiple_sentences = !is.na(Multi.sentence.identifier))
+
+# count rows per defendant
+sentences3 %>%
+  count(defendant) %>%
+  filter(n > 1) %>%
+  arrange(desc(n))
+
+sentences3_clean <- sentences3 %>% 
+  # Group by defendant
+  group_by(defendant) %>%
+  # Count original rows and keep most recent record
+  mutate(count_of_records = n()) %>%
+  arrange(desc(year)) %>%
+  slice(1) %>%
+  # Ungroup
+  ungroup()
+
+# count rows per defendant
+sentences3_clean %>%
+  count(defendant) %>%
+  filter(n > 1) %>%
+  arrange(desc(n))
+
+# create two data sets by cases
+df <- sentences3_clean %>% 
+  relocate(defendant, year, gender, race, outcome_category, outcome_original, region, state, multiple_sentences, count_of_records, name)
+single <- df %>% 
+  filter(count_of_records == 1)
+multiple <- df %>% 
+  filter(count_of_records > 1)
+df
+single
+multiple
+```
+
+```{r, include=F, warning=F, messages=F}
+glimpse(df) %>% 
+  select(Name = "name",
+         Year = "year",
+         multiple_sentences,
+         count_of_records,
+         Category = "outcome_category") %>% 
+  as.tibble()
+```
+
+```{r, include=F, warning=F, messages=F}
+library(tidycensus)
+# gather population estimates from Census data
+# Filter for Black/White defendants and calculate counts
+sentencing_race <- df %>%
+  filter(race %in% c("Black", "White")) %>%  # Keep only Black/White
+  count(race) %>%
+  mutate(race = tolower(race))  # Match ACS race labels ("black", "white")
+
+# Get race_pop including ALL racial groups (for accurate denominator)
+race_pop_all <- get_acs(
+  geography = "us",
+  variables = c(
+    white = "B02001_002",
+    black = "B02001_003",
+    asian = "B02001_005",
+    hispanic = "B03003_003"  # Add other groups as needed
+  ),
+  year = 2023,
+  survey = "acs5"
+) %>%
+  select(race = variable, us_pop = estimate)
+
+# Calculate disparity using total US population denominator
+disparity_df <- sentencing_race %>%
+  left_join(
+    race_pop_all %>% filter(race %in% c("black", "white")),
+    by = "race"
+  ) %>%
+  mutate(
+    us_pct = us_pop / sum(race_pop_all$us_pop),  # Key change: total pop denominator
+    sentenced_pct = n / sum(n),
+    disparity_ratio = sentenced_pct / us_pct
+  )
+
+# Result includes only Black/White but uses full population denominator
+
+# view the df
+disparity_df
+# columns: race | n | us_pop | moe | us_pct | sentenced_pct | disparity_ratio
+```
+
+```{r, include=F, warning=F, messages=F}
+library(ggplot2)
+library(kableExtra)
+library(knitr)
+
+ggplot(disparity_df, aes(x = race, y = disparity_ratio)) +
+  geom_col(fill = "steelblue", width = 0.6) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red", linewidth = 1.2) +
+  labs(
+    title = "Black-White Capital Sentencing Disparity Ratios",
+    subtitle = "Ratio of sentencing proportion to population proportion",
+    x = "Race",
+    y = "Disparity Ratio"
+  ) +
+  scale_x_discrete(labels = c("black" = "Black", "white" = "White")) +
+  theme_minimal(base_size = 18) +  # Larger base font
+  theme(
+    # Center titles
+    plot.title = element_text(hjust = 0.5, size = 24, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 20),
+    
+    # Center plot in available space
+    plot.margin = unit(c(2, 2, 2, 2), "cm"),  # Equal margins
+    
+    # Enhance visibility
+    axis.title = element_text(size = 20),
+    axis.text = element_text(size = 18),
+    panel.grid.major.x = element_blank()  # Cleaner look
+  ) -> disparity_plot
+
+ggsave(
+  filename = "img/disparity_plot.png",
+  plot = disparity_plot,
+  width = 16,        # width in inches
+  height = 12,       # height in inches
+  units = "in",
+  dpi = 300,         # high resolution
+  bg = "white"       # ensures white background instead of transparent
+)
+
+```
+
+![](img/disparity_plot.png){width=90%}
+
+```{r, echo=F, warning=F, messages=F}
+# install.packages(c("kableExtra", "magick", "webshot2"))
+
+
+disparity_df %>%
+  kable(
+    format = "html",
+    align = c("l", "c", "c", "c", "c", "c"),
+    col.names = c("Race", "Count", "US Pop", "US %", "Sentenced %", "Disparity Ratio"),
+    digits = 2
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = TRUE,
+    font_size = 14
+  ) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "steelblue") %>%
+  column_spec(6, bold = TRUE)
+
+
+
+```
+
+```{r, include=F, warning=F, messages=F}
+
+# Remove NA outcomes
+df_clean <- df %>% 
+  filter(!is.na(outcome_category))
+
+# Verify removal
+# table(df_clean$outcome_category, useNA = "always")
+
+# Define colors manually
+race_colors <- c(
+  "White" = "steelblue",
+  "Black" = "#E51937",  # Red from your poster palette
+  "Asian" = "#5F6062",  # Gray from your palette (optional)
+  "Hispanic" = "#8C8C8C"  # Light gray (optional)
+)
+
+df_clean %>%
+  count(race, outcome_category) %>%
+  ggplot(aes(x = outcome_category, y = n, fill = race)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(values = race_colors) +  # Apply custom colors
+  labs(
+    title = "Capital Case Outcomes by Race",
+    x = "Outcome Category",
+    y = "Count",
+    fill = "Race"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top",
+    plot.title = element_text(color = "#003A63")  # Navy title
+  )
+
+ggsave("img/outcome_plot_branded.png",
+       width = 12,
+       height = 8,
+       dpi = 300,
+       bg = "white")
+
+
+```
+
+![](img/outcome_plot_branded.png){width=90%}
+```{r, include=F, warning=F, messages=F}
+
+```
+
+```{r, include=F, warning=F, messages=F}
+
+```
 
 These are the findings.
 
@@ -92,20 +380,13 @@ Here is finding 1.
 Here is finding 2.
 
 ```{r, include=F, warning=F, messages=F}
-sentences <- read.csv("../data/sentences.csv")
 
-yearly <- yearly_counts <- sentences %>%
-  group_by(Year) %>%
-  summarise(Count = n())
 ```
 
-```{r, echo=F, warning=F, messages=F}
-ggplot(yearly_counts, aes(x = Year, y = Count)) +
-  geom_line(color = "blue") +
-  geom_point(color = "red") +
-  labs(title = "Trend of Sentences Over Time", x = "Year", y = "Count") +
-  theme_minimal()
+```{r, include=F, warning=F, messages=F}
+
 ```
+
 
 Here is finding 3.
 
