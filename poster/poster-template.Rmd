@@ -84,7 +84,7 @@ Collapsed categories in capital punishment data guided the analysis:
 
 ## Data
 
-- Capital Punishment Data (historical)
+- Death Penalty Information Center, Death Penalty Census Database
 
 - U.S. Census Data (2023 ACS 5-year Estimates)
 
@@ -375,10 +375,9 @@ ggsave("img/outcome_plot_branded.png",
 
 These are the findings.
 
-Here is finding 1.
+Black individuals make up 12.3% of the population but account for 46.9% of sentences, they are 3.82× overrepresented
 
-Here is finding 2.
-
+Black individuals account for nearly half (48.9%) of all exonerations, 
 ```{r, include=F, warning=F, messages=F}
 
 ```
@@ -388,19 +387,17 @@ Here is finding 2.
 ```
 
 
-Here is finding 3.
+Black individuals represent over half (52.8%) of sentences commuted, far surpassing white individuals at 36.4%
 
 Here is finding 4.
 
 # Discussion
 
-This is the discussion section [@alexander2021new].
-
-This is the further discussion.
+The data reveals that Black individuals are significantly overrepresented at multiple stages of the criminal legal process after being placed on a sentence of death. While Black individuals make up only 12.3% of the U.S. population, they account for 46.9% of indivduals placed on a sentence of death. White individuals represent 63.1% of the U.S. population but account for only 53.1% of sentences. This disparity in sentencing suggests that the death penalty is racially bias. Black individuals account for 52.8% of all exonerations in the dataset in contrast, white individuals make up 36.4% of exonerations.Black individuals being overrepresuted in  exonerations and sentences commuted suggesting they are disproportionately impacted by systemic failures. 
 
 # Conclusion
 
-This is some concluding text.
+The overrepresentation of Black individuals in both convictions and corrective outcomes like exonerations and commutations indicates that bias and injustice are not isolated events but embedded within the  justice system. These patterns point to systemic failures that result in both wrongful convictions and unequal justice outcomes. The visualization of this data helps to reveal the  racial disparities in the U.S. criminal legal system. 
 
 # Acknowledgements
 

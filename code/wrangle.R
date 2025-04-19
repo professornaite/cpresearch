@@ -3,9 +3,15 @@ library(dplyr)
 library(tidyverse)
 library(ggplot2)
 library(here)
+
+
 here::i_am("wrangle.R")
 sentences <- read.csv("../data/sentences.csv")
 str(sentences)
+
+CENSUS_API_KEY='3cc2bbb655ec6af727c987df3a4559e41effe377'
+library(tidycensus)
+library(tidyverse)
 
 
 sentences2 <- sentences %>%
@@ -151,3 +157,53 @@ disparity_df <- sentencing_race %>%
 
 # view the df
 disparity_df
+
+
+
+# Exonerated Graph         
+ggplot(subset(sentences2, Outcome_Category == "Exonerated"), aes(x = Outcome_Category, fill = Races)) +
+    geom_bar(position = "dodge") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Executed Graph
+ggplot(subset(sentences2, Outcome_Category == "Executed"), aes(x = Outcome_Category, fill = Races)) +
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Died Other Graph
+ggplot(subset(sentences2, Outcome_Category == "Died (Other)"), aes(x = Outcome_Category, fill = Races)) +
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Sentence Commuted
+ggplot(subset(sentences2, Outcome_Category == "Sentence Commuted"), aes(x = Outcome_Category, fill = Races)) +
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Active Death Sentence
+ggplot(subset(sentences2, Outcome_Category == "Active Death Sentence"), aes(x = Outcome_Category, fill = Races)) +
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+exonerated_props <- sentences2 %>%
+  filter(Outcome_Category == "Exonerated") %>%
+  group_by(Races) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count))
+
+exonerated_props
+
+commuted_props <- sentences2 %>%
+  filter(Outcome_Category == "Sentence Commuted") %>%
+  group_by(Races) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count))
+
+commuted_props
