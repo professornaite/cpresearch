@@ -44,6 +44,7 @@ library(dplyr)
 library(tidyverse)
 library(ggplot2)
 library(here)
+library(kableExtra)
 here::i_am("poster-template.Rmd")
 ```
 
@@ -60,7 +61,35 @@ We explore disparities in U.S. capital punishment. Our hypotheses align with stu
 
 # Overview
 
-@bohm2016deathquest outlines theories and practices related to capital punishment in the United States. Other scholars, such as @alexander2021new, analyze prisons and the historical. Fewer studies look at capital punishment. As more researchers consider capital punishment, base studies need to be conducted.
+@bohm2016deathquest, in Deathquest, presents a foundational analysis of capital punishment theories and practices in the United States, while scholars like @alexander2021new extensively examined mass incarceration's historical roots and racialized impacts (e.g., The New Jim Crow). However, systematic research on contemporary capital punishment remains comparatively limited. This gap underscores the need for more empirical studies to establish baseline data on sentencing disparities, and prosecutorial decision-making.
+ 
+# Research Questions
+
+1.  What are the sentencing outcome distributions: Executed, Exonerated, Resentenced, Sentence Commuted, and Died?
+
+2.  Are defendants proportionally represented across sentencing outcomes, or do disparities exist indicating that one racial group (Black or White) is overrepresented or underrepresented?
+
+# Method
+
+We conduct an exploratory analysis on capital punishment. 
+
+We use computational methods in R and Python to gather and clean data sets. We integrate data from the Death Penalty Information Center (DPIC) and the U.S. Census Bureau to analyze disparity ratios between Black and White individuals. The DPIC provides comprehensive data, reports, and analyses on capital punishment trends and issues. Census data provides population estimates.
+
+## Analytic Model
+
+We use a disparity ratio to compare difference in outcomes between Black and White sentences, which is defined as follows:
+
+$$
+\frac{\text{Capital Sentencing Proportion}}{\text{Population Proportion}} = \frac{\dfrac{n}{\sum n}}{\dfrac{\text{estimate}}{\sum \text{estimate}}}
+$$
+
+The capital sentencing proportion is divided by the population proportion for each group. The capital sentencing proportion is the ratio of sentences for a group ($n$) over the total ($\sum{n}$); a similar ratio is computed for the population proportion estimates, which is a population estimate of a group over the total population estimate.
+
+## Data
+
+**Death Penalty Information Center**: Death Penalty Census Database
+
+**U.S. Census Data**: 2023 ACS 5-year Estimates
 
 Collapsed categories in capital punishment data guided the analysis:
 
@@ -72,29 +101,7 @@ Collapsed categories in capital punishment data guided the analysis:
 
 - **Sentence Commuted**: The reduction or alteration of a defendant's original sentence by a executive authority (such as a governor or president), which shortens the length of imprisonment or changes the nature of the punishment. 
 
-- **Died (Other)**: Death by means other than execution, such as dying on death row.
-
-# Research Questions
-
-1.  What are the sentencing outcome distributions: Executed, Exonerated, Resentenced, Sentence Commuted, and Died?
-
-2.  Are defendants proportionally represented across sentencing outcomes, or do disparities exist indicating that either racial group (Black-White) is overrepresented or underrepresented?
-
-# Methodology
-
-## Data
-
-- Death Penalty Information Center, Death Penalty Census Database
-
-- U.S. Census Data (2023 ACS 5-year Estimates)
-
-We cleaned and integrated data values across both databases.
-
-## Disparity ratio
-
-$$
-\frac{\text{Capital Sentencing Proportion}}{\text{Population Proportion}} = \frac{\dfrac{n}{\sum n}}{\dfrac{\text{estimate}}{\sum \text{estimate}}}
-$$
+- **Died (Other)**: Death by means other than execution.
 
 # Findings
 
@@ -253,6 +260,95 @@ disparity_df
 # columns: race | n | us_pop | moe | us_pct | sentenced_pct | disparity_ratio
 ```
 
+## Sentencing Outcome Distribution
+
+```{r, include=F, warning=F, messages=F}
+
+# Remove NA outcomes
+df_clean <- df %>% 
+  filter(!is.na(outcome_category))
+
+# Verify removal
+# table(df_clean$outcome_category, useNA = "always")
+
+# Define colors manually
+race_colors <- c(
+  "White" = "steelblue",
+  "Black" = "#E51937",  # Red from your poster palette
+  "Asian" = "#5F6062",  # Gray from your palette (optional)
+  "Hispanic" = "#8C8C8C"  # Light gray (optional)
+)
+
+df_clean %>%
+  count(race, outcome_category) %>%
+  ggplot(aes(x = outcome_category, y = n, fill = race)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(values = race_colors) +  # Apply custom colors
+  labs(
+    title = "Capital Case Outcomes by Race",
+    x = "Outcome Category",
+    y = "Count",
+    fill = "Race"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top",
+    plot.title = element_text(color = "#003A63")  # Navy title
+  )
+
+ggsave("img/outcome_plot_branded.png",
+       width = 12,
+       height = 8,
+       dpi = 300,
+       bg = "white")
+```
+
+![](img/outcome_plot_branded.png){width=95%}
+
+## Limitations
+
+Given the nature of the data, sentencing and population counts are not derived from the same jurisdiction or period. Confounding factors and statistical estimates (odds ratio) are not reported here.
+
+## Disparity Ratio
+
+```{r, echo=F, warning=F, messages=F}
+# install.packages(c("kableExtra", "magick", "webshot2"))
+
+disparity_df %>%
+  kable(
+    format = "html",
+    align = c("l", "c", "c", "c", "c", "c"),
+    col.names = c("Race", "Count", "US Pop", "US %", "Sentenced %", "Disparity Ratio"),
+    digits = 2
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = TRUE,
+    font_size = 16,  # Increased from 14
+    fixed_thead = TRUE  # Lock header during scrolling
+  ) %>%
+  row_spec(
+    0, 
+    bold = TRUE, 
+    color = "white", 
+    background = "steelblue",
+    extra_css = "height: 60px;"  # Taller header row
+  ) %>%
+  column_spec(
+    1:6,
+    width_min = "150px",  # Minimum column width
+    extra_css = "padding: 12px;"  # Increased cell padding
+  ) %>%
+  column_spec(
+    6, 
+    bold = TRUE,
+    background = "#FFF3CD"  # Optional: Highlight disparity ratio
+  )
+
+```
+
+
 ```{r, include=F, warning=F, messages=F}
 library(ggplot2)
 library(kableExtra)
@@ -295,112 +391,18 @@ ggsave(
 
 ```
 
+## **Black individuals** make up **12.3%** of the population but account for **46.9%** of sentences (**3.82× overrepresented**).
+
 ![](img/disparity_plot.png){width=90%}
 
-```{r, echo=F, warning=F, messages=F}
-# install.packages(c("kableExtra", "magick", "webshot2"))
+- **Black individuals** account for nearly half (**48.9%**) of all exonerations. **Black individuals** represent over half (**52.8%**) of sentences commuted, far surpassing white individuals at **36.4%**.  
 
+# Discussion and Conclusion
 
-disparity_df %>%
-  kable(
-    format = "html",
-    align = c("l", "c", "c", "c", "c", "c"),
-    col.names = c("Race", "Count", "US Pop", "US %", "Sentenced %", "Disparity Ratio"),
-    digits = 2
-  ) %>%
-  kable_styling(
-    bootstrap_options = c("striped", "hover", "condensed"),
-    full_width = TRUE,
-    font_size = 14
-  ) %>%
-  row_spec(0, bold = TRUE, color = "white", background = "steelblue") %>%
-  column_spec(6, bold = TRUE)
-
-
-
-```
-
-```{r, include=F, warning=F, messages=F}
-
-# Remove NA outcomes
-df_clean <- df %>% 
-  filter(!is.na(outcome_category))
-
-# Verify removal
-# table(df_clean$outcome_category, useNA = "always")
-
-# Define colors manually
-race_colors <- c(
-  "White" = "steelblue",
-  "Black" = "#E51937",  # Red from your poster palette
-  "Asian" = "#5F6062",  # Gray from your palette (optional)
-  "Hispanic" = "#8C8C8C"  # Light gray (optional)
-)
-
-df_clean %>%
-  count(race, outcome_category) %>%
-  ggplot(aes(x = outcome_category, y = n, fill = race)) +
-  geom_col(position = "dodge", width = 0.7) +
-  scale_fill_manual(values = race_colors) +  # Apply custom colors
-  labs(
-    title = "Capital Case Outcomes by Race",
-    x = "Outcome Category",
-    y = "Count",
-    fill = "Race"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "top",
-    plot.title = element_text(color = "#003A63")  # Navy title
-  )
-
-ggsave("img/outcome_plot_branded.png",
-       width = 12,
-       height = 8,
-       dpi = 300,
-       bg = "white")
-
-
-```
-
-![](img/outcome_plot_branded.png){width=90%}
-```{r, include=F, warning=F, messages=F}
-
-```
-
-```{r, include=F, warning=F, messages=F}
-
-```
-
-These are the findings.
-
-Black individuals make up 12.3% of the population but account for 46.9% of sentences, they are 3.82× overrepresented
-
-Black individuals account for nearly half (48.9%) of all exonerations, 
-```{r, include=F, warning=F, messages=F}
-
-```
-
-```{r, include=F, warning=F, messages=F}
-
-```
-
-
-Black individuals represent over half (52.8%) of sentences commuted, far surpassing white individuals at 36.4%
-
-Here is finding 4.
-
-# Discussion
-
-The data reveals that Black individuals are significantly overrepresented at multiple stages of the criminal legal process after being placed on a sentence of death. While Black individuals make up only 12.3% of the U.S. population, they account for 46.9% of indivduals placed on a sentence of death. White individuals represent 63.1% of the U.S. population but account for only 53.1% of sentences. This disparity in sentencing suggests that the death penalty is racially bias. Black individuals account for 52.8% of all exonerations in the dataset in contrast, white individuals make up 36.4% of exonerations.Black individuals being overrepresuted in  exonerations and sentences commuted suggesting they are disproportionately impacted by systemic failures. 
-
-# Conclusion
-
-The overrepresentation of Black individuals in both convictions and corrective outcomes like exonerations and commutations indicates that bias and injustice are not isolated events but embedded within the  justice system. These patterns point to systemic failures that result in both wrongful convictions and unequal justice outcomes. The visualization of this data helps to reveal the  racial disparities in the U.S. criminal legal system. 
+This study builds on prior work [@phillips2008racial] to identify national disparities in sentencing outcomes and bias in the death penalty. The overrepresentation of Black individuals suggests that bias and injustice are not isolated incidents.
 
 # Acknowledgements
 
-These are the acknowledgements. This work was supporting by funding from the Alfred P. Sloan Foundation (Grant 2023-21062).
+This work was supported by funding from the Alfred P. Sloan Foundation (Grant 2023-21062).
 
 # References
